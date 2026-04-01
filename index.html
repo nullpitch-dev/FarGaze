@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FarGaze — Life Analytics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: rgba(255,255,255,0.07);
+      --text: #e8e6e0;
+      --muted: #6b6a72;
+      --accent: #c8a96e;
+      --accent-dim: rgba(200,169,110,0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 4rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      animation: fadeIn 0.8s ease 0.1s forwards;
+    }
+
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+    }
+
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8rem 4rem 4rem;
+      max-width: 900px;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.3s forwards;
+    }
+
+    .hero-tag::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .hero-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3.5rem, 7vw, 6.5rem);
+      font-weight: 300;
+      line-height: 1.05;
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.45s forwards;
+    }
+
+    .hero-title em { font-style: italic; color: var(--accent); }
+
+    .hero-desc {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 480px;
+      line-height: 1.9;
+      margin-bottom: 3rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.6s forwards;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.75s forwards;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      padding: 0.9rem 2.5rem;
+      background: var(--accent);
+      color: var(--bg);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .btn-primary:hover { opacity: 0.85; transform: translateY(-2px); }
+
+    .btn-secondary {
+      display: inline-block;
+      padding: 0.9rem 2.5rem;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .stats {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      opacity: 0;
+      animation: fadeIn 0.8s ease 1s forwards;
+    }
+
+    .stat {
+      flex: 1;
+      padding: 2.5rem 4rem;
+      border-right: 1px solid var(--border);
+      transition: background 0.3s;
+    }
+
+    .stat:last-child { border-right: none; }
+    .stat:hover { background: var(--accent-dim); }
+
+    .stat-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.8rem;
+      font-weight: 300;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .features {
+      position: relative;
+      z-index: 1;
+      padding: 8rem 4rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 4rem;
+    }
+
+    .section-tag {
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .section-line { flex: 1; height: 1px; background: var(--border); }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .feature {
+      background: var(--bg);
+      padding: 3rem 2.5rem;
+      transition: background 0.3s;
+    }
+
+    .feature:hover { background: var(--surface); }
+
+    .feature-icon { font-size: 1.5rem; margin-bottom: 1.5rem; }
+
+    .feature-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
+      font-weight: 400;
+      margin-bottom: 0.8rem;
+      color: var(--text);
+    }
+
+    .feature-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.8; }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: 2rem 4rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+    }
+
+    .footer-copy { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.08em; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      nav { padding: 1.2rem 1.5rem; }
+      .nav-links { display: none; }
+      .hero { padding: 7rem 1.5rem 3rem; }
+      .stats { flex-direction: column; }
+      .stat { border-right: none; border-bottom: 1px solid var(--border); padding: 2rem 1.5rem; }
+      .features { padding: 4rem 1.5rem; }
+      .features-grid { grid-template-columns: 1fr; }
+      footer { padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-logo">FarGaze</div>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <section class="hero">
+    <p class="hero-tag">Life Analytics Platform</p>
+    <h1 class="hero-title">
+      See your life<br>
+      from <em>far above.</em>
+    </h1>
+    <p class="hero-desc">
+      FarGaze transforms your daily habits, productivity, and spending
+      into meaningful insights — revealing patterns you never knew existed.
+    </p>
+    <div class="hero-actions">
+      <a href="#features" class="btn-primary">Explore Features</a>
+      <a href="#about" class="btn-secondary">Learn More</a>
+    </div>
+  </section>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-number">7+</div>
+      <div class="stat-label">Years of Data</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">82</div>
+      <div class="stat-label">Tracked Metrics</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">42K</div>
+      <div class="stat-label">Data Points</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">∞</div>
+      <div class="stat-label">Insights</div>
+    </div>
+  </div>
+
+  <section class="features" id="features">
+    <div class="section-header">
+      <span class="section-tag">What FarGaze Does</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="features-grid">
+      <div class="feature">
+        <div class="feature-icon">📊</div>
+        <h3 class="feature-title">Visual Analytics</h3>
+        <p class="feature-desc">Beautiful charts and graphs that turn years of raw data into clear, actionable visuals.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📈</div>
+        <h3 class="feature-title">Trend Discovery</h3>
+        <p class="feature-desc">Uncover long-term patterns across your habits, productivity, and finances over time.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🤖</div>
+        <h3 class="feature-title">AI Insights</h3>
+        <p class="feature-desc">AI-powered analysis surfaces hidden correlations and personalised recommendations.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">💤</div>
+        <h3 class="feature-title">Habit Tracking</h3>
+        <p class="feature-desc">Monitor sleep, exercise, diet and daily routines with precision and consistency.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <h3 class="feature-title">Productivity</h3>
+        <p class="feature-desc">Understand your peak performance hours and optimise how you spend your time.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">💰</div>
+        <h3 class="feature-title">Finance</h3>
+        <p class="feature-desc">Track spending patterns and financial habits to build a clearer picture of your wealth.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer id="contact">
+    <div class="footer-logo">FarGaze</div>
+    <div class="footer-copy">© 2026 FarGaze. All rights reserved.</div>
+  </footer>
+
+</body>
+</html>
