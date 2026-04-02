@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FarGaze — My Log</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: rgba(255,255,255,0.07);
+      --text: #e8e6e0;
+      --muted: #6b6a72;
+      --accent: #c8a96e;
+      --accent-dim: rgba(200,169,110,0.1);
+      --green: #4caf82;
+      --red: #cf6679;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 3rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,15,0.9);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-decoration: none;
+    }
+
+    .nav-tag {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* MAIN */
+    main {
+      position: relative;
+      z-index: 1;
+      padding: 6rem 3rem 3rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* HEADER */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 3rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .page-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.5rem;
+      font-weight: 300;
+    }
+
+    .page-title em { font-style: italic; color: var(--accent); }
+
+    .page-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-align: right;
+    }
+
+    .page-meta span {
+      display: block;
+      color: var(--accent);
+      font-size: 1rem;
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    /* STATS ROW */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg);
+      padding: 1.5rem 2rem;
+      transition: background 0.3s;
+    }
+
+    .stat-card:hover { background: var(--accent-dim); }
+
+    .stat-card-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-card-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 300;
+      color: var(--accent);
+    }
+
+    /* STATUS */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
+    .status-dot.success { background: var(--green); }
+    .status-dot.error { background: var(--red); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* TABLE */
+    .table-wrap {
+      border: 1px solid var(--border);
+      overflow: auto;
+      max-height: 65vh;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--surface);
+    }
+
+    th {
+      padding: 1rem 1.2rem;
+      text-align: left;
+      font-size: 0.68rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 400;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 0.8rem 1.2rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    tr:hover td { background: var(--accent-dim); }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid var(--border);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      border-radius: 2px;
+    }
+
+    .date-cell {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      color: var(--accent);
+    }
+
+    /* LOADING / ERROR */
+    .message-box {
+      padding: 4rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .message-box .icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    /* FOOTER */
+    .table-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="https://fargaze.co" class="nav-logo">FarGaze</a>
+    <span class="nav-tag">Personal Log — 2026</span>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">My <em>Activity Log</em></h1>
+      </div>
+      <div class="page-meta">
+        Total Rows
+        <span id="total-rows">—</span>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-card-label">Total Entries</div>
+        <div class="stat-card-value" id="stat-entries">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Date Range</div>
+        <div class="stat-card-value" id="stat-range" style="font-size:1.1rem;padding-top:0.4rem">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Top Category</div>
+        <div class="stat-card-value" id="stat-top-cat" style="font-size:1.1rem;padding-top:0.4rem">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Unique Activities</div>
+        <div class="stat-card-value" id="stat-unique">—</div>
+      </div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="status-bar">
+      <div class="status-dot loading" id="status-dot"></div>
+      <span id="status-text">Connecting to Google Sheets...</span>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Year</th>
+            <th>Month</th>
+            <th>Day</th>
+            <th>Category</th>
+            <th>Activity</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr>
+            <td colspan="6">
+              <div class="message-box">
+                <div class="icon">⏳</div>
+                Loading your data...
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="table-footer">
+        <span id="footer-left">Fetching data...</span>
+        <span>FarGaze Personal Log</span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const SHEET_ID = '1aSh_DEtA_izlIcGolvNezxN7iz73wVe3wbvEMAP-A6A';
+    const SHEET_NAME = '2026';
+    // Columns: A=activity(B-1), B=category(A-1), I=year, J=month, K=day
+    // Using Google Sheets JSON API (public sheets only)
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}&range=A:K`;
+
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const tableBody = document.getElementById('table-body');
+    const totalRows = document.getElementById('total-rows');
+    const statEntries = document.getElementById('stat-entries');
+    const statRange = document.getElementById('stat-range');
+    const statTopCat = document.getElementById('stat-top-cat');
+    const statUnique = document.getElementById('stat-unique');
+    const footerLeft = document.getElementById('footer-left');
+
+    function setStatus(type, text) {
+      statusDot.className = 'status-dot ' + type;
+      statusText.textContent = text;
+    }
+
+    function formatDate(y, m, d) {
+      if (!y && !m && !d) return '—';
+      return `${y || ''}/${String(m || '').padStart(2,'0')}/${String(d || '').padStart(2,'0')}`;
+    }
+
+    async function fetchData() {
+      try {
+        setStatus('loading', 'Connecting to Google Sheets...');
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Network error');
+        const text = await res.text();
+
+        // Google's response wraps JSON in a callback — strip it
+        const json = JSON.parse(text.substring(text.indexOf('(') + 1, text.lastIndexOf(')')));
+        const rows = json.table.rows;
+
+        if (!rows || rows.length === 0) {
+          throw new Error('No data found');
+        }
+
+        setStatus('success', `Connected — ${rows.length} rows loaded from Google Sheets`);
+        totalRows.textContent = rows.length;
+        statEntries.textContent = rows.length;
+        footerLeft.textContent = `${rows.length} entries loaded`;
+
+        // Parse rows
+        // Col A (index 0) = activity, Col B (index 1) = category
+        // Col I (index 8) = year, Col J (index 9) = month, Col K (index 10) = day
+        const parsed = rows.map(row => ({
+          activity: row.c[0]?.v ?? '—',
+          category: row.c[1]?.v ?? '—',
+          year:     row.c[8]?.v ?? '',
+          month:    row.c[9]?.v ?? '',
+          day:      row.c[10]?.v ?? '',
+        }));
+
+        // Stats
+        const firstRow = parsed[0];
+        const lastRow = parsed[parsed.length - 1];
+        statRange.textContent = `${firstRow.year}/${firstRow.month} → ${lastRow.year}/${lastRow.month}`;
+
+        const categoryCounts = {};
+        const uniqueActivities = new Set();
+        parsed.forEach(r => {
+          if (r.category && r.category !== '—') categoryCounts[r.category] = (categoryCounts[r.category] || 0) + 1;
+          if (r.activity && r.activity !== '—') uniqueActivities.add(r.activity);
+        });
+
+        const topCat = Object.entries(categoryCounts).sort((a,b) => b[1]-a[1])[0];
+        statTopCat.textContent = topCat ? topCat[0] : '—';
+        statUnique.textContent = uniqueActivities.size;
+
+        // Render table (show last 100 rows, most recent first)
+        const display = [...parsed].reverse().slice(0, 100);
+        tableBody.innerHTML = display.map(row => `
+          <tr>
+            <td class="date-cell">${formatDate(row.year, row.month, row.day)}</td>
+            <td>${row.year || '—'}</td>
+            <td>${row.month || '—'}</td>
+            <td>${row.day || '—'}</td>
+            <td><span class="badge">${row.category}</span></td>
+            <td>${row.activity}</td>
+          </tr>
+        `).join('');
+
+      } catch (err) {
+        setStatus('error', `Error: ${err.message} — Make sure the sheet is shared publicly`);
+        tableBody.innerHTML = `
+          <tr><td colspan="6">
+            <div class="message-box">
+              <div class="icon">⚠️</div>
+              Could not load data. Please make sure your Google Sheet is set to "Anyone with the link can view".
+            </div>
+          </td></tr>`;
+      }
+    }
+
+    fetchData();
+  </script>
+</body>
+</html>
